@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "692445282265",
+    "project_id": "caramel-caster-466105-n4",
+    "storage_bucket": "caramel-caster-466105-n4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:692445282265:android:eed8e20a3c911afe4f63c8",
+        "android_client_info": {
+          "package_name": "com.example.social_feed_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBFLvdFLrrAwqbGVw9M_ZSWlHD_7BtQkYk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
