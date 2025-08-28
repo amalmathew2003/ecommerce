@@ -19,7 +19,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String? selectedCategory;
+  Map<String, String>? selectedCategory; // {name, image}
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +28,9 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         backgroundColor: ColorConst.primary,
         title: Text(
-          selectedCategory == null ? "Categories" : selectedCategory!,
+          selectedCategory == null
+              ? "Categories"
+              : selectedCategory!["name"] ?? "Category",
           style: GoogleFonts.namdhinggo(
             color: ColorConst.secondary,
             fontSize: 20,
@@ -52,11 +54,11 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: selectedCategory == null
           ? _buildCategoryList()
-          : _buildProductList(selectedCategory!),
+          : _buildProductList(selectedCategory!["name"]!),
     );
   }
 
-  /// 🔹 Fetch unique categories
+  /// 🔹 Show Categories (with image + name)
   Widget _buildCategoryList() {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance.collection("products").snapshots(),
@@ -79,17 +81,21 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         }
 
-        final categories = <String>{};
+        final Map<String, String> categoryMap = {}; // {name: image}
         for (var doc in snapshot.data!.docs) {
           final data = doc.data() as Map<String, dynamic>;
           if (data["categories"] != null && data["categories"] is List) {
-            categories.addAll(List<String>.from(data["categories"]));
-          } else if (data["category"] != null && data["category"] is String) {
-            categories.add(data["category"]);
+            for (var cat in data["categories"]) {
+              if (cat is Map && cat["name"] != null) {
+                final name = cat["name"].toString();
+                final image = cat["image"]?.toString() ?? "";
+                categoryMap.putIfAbsent(name, () => image);
+              }
+            }
           }
         }
 
-        final categoryList = categories.toList();
+        final categoryList = categoryMap.entries.toList();
 
         return GridView.builder(
           padding: const EdgeInsets.all(16),
@@ -102,22 +108,47 @@ class _HomeScreenState extends State<HomeScreen> {
           itemBuilder: (context, index) {
             final category = categoryList[index];
             return GestureDetector(
-              onTap: () => setState(() => selectedCategory = category),
+              onTap: () => setState(
+                () => selectedCategory = {
+                  "name": category.key,
+                  "image": category.value,
+                },
+              ),
               child: Card(
                 color: ColorConst.primary,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
                 elevation: 4,
-                child: Center(
-                  child: Text(
-                    category,
-                    style: GoogleFonts.namdhinggo(
-                      color: ColorConst.secondary,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: category.value.isNotEmpty
+                          ? Image.network(
+                              category.value,
+                              width: 100,
+                              height: 100,
+                              fit: BoxFit.cover,
+                            )
+                          : Container(
+                              width: 100,
+                              height: 100,
+                              color: Colors.grey.shade300,
+                              child: const Icon(Icons.category, size: 40),
+                            ),
                     ),
-                  ),
+                    const SizedBox(height: 8),
+                    Text(
+                      category.key,
+                      style: GoogleFonts.namdhinggo(
+                        color: ColorConst.secondary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             );
@@ -127,13 +158,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// 🔹 Fetch products filtered by category
-  Widget _buildProductList(String category) {
+  /// 🔹 Show Products filtered by category name
+  Widget _buildProductList(String categoryName) {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection("products")
-          .where("categories", arrayContains: category)
-          .snapshots(),
+      stream: FirebaseFirestore.instance.collection("products").snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
@@ -144,7 +172,7 @@ class _HomeScreenState extends State<HomeScreen> {
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return Center(
             child: Text(
-              "No products found in $category",
+              "No products found in $categoryName",
               style: GoogleFonts.namdhinggo(
                 color: ColorConst.secondary,
                 fontSize: 16,
@@ -153,7 +181,27 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         }
 
-        final products = snapshot.data!.docs;
+        final products = snapshot.data!.docs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          if (data["categories"] != null && data["categories"] is List) {
+            for (var cat in data["categories"]) {
+              if (cat is Map && cat["name"] == categoryName) return true;
+            }
+          }
+          return false;
+        }).toList();
+
+        if (products.isEmpty) {
+          return Center(
+            child: Text(
+              "No products found in $categoryName",
+              style: GoogleFonts.namdhinggo(
+                color: ColorConst.secondary,
+                fontSize: 16,
+              ),
+            ),
+          );
+        }
 
         return ListView.builder(
           padding: const EdgeInsets.all(12),
@@ -183,11 +231,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: (data["imageUrls"] != null &&
+                        child:
+                            (data["imageUrls"] != null &&
                                 data["imageUrls"] is List &&
                                 data["imageUrls"].isNotEmpty)
                             ? Image.network(
-                                (data["imageUrls"] as List).first,
+                                data["imageUrls"].first.toString(),
                                 width: 100,
                                 height: 100,
                                 fit: BoxFit.cover,

@@ -25,10 +25,11 @@ class _ProductAddPageState extends State<ProductAddPage>
   final categoryController = TextEditingController();
 
   List<String> imageUrls = [];
-  List<String> categories = [];
+  List<Map<String, String>> categories = []; // category name + image url
   Uint8List? previewBytes;
   File? previewFile;
   bool isLoading = false;
+  String? categoryImageUrl;
 
   late AnimationController _animController;
   late Animation<double> _fadeAnimation;
@@ -136,13 +137,49 @@ class _ProductAddPageState extends State<ProductAddPage>
     }
   }
 
+  Future<void> _pickCategoryImage() async {
+    final result = await FilePicker.platform.pickFiles(type: FileType.image);
+
+    if (result != null) {
+      setState(() => isLoading = true);
+
+      String? url;
+      if (kIsWeb) {
+        url = await uploadProductImage(
+          bytes: result.files.single.bytes,
+          fileName: result.files.single.name,
+        );
+      } else if (result.files.single.path != null) {
+        url = await uploadProductImage(
+          file: File(result.files.single.path!),
+          fileName: result.files.single.name,
+        );
+      }
+
+      if (url != null) {
+        setState(() {
+          categoryImageUrl = url;
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("❌ Category image upload failed")),
+        );
+      }
+
+      setState(() => isLoading = false);
+    }
+  }
+
   void _addCategory() {
     final newCategory = categoryController.text.trim();
-    if (newCategory.isNotEmpty && !categories.contains(newCategory)) {
+    if (newCategory.isNotEmpty &&
+        categoryImageUrl != null &&
+        !categories.any((cat) => cat["name"] == newCategory)) {
       setState(() {
-        categories.add(newCategory);
+        categories.add({"name": newCategory, "image": categoryImageUrl!});
+        categoryController.clear();
+        categoryImageUrl = null; // reset after adding
       });
-      categoryController.clear();
     }
   }
 
@@ -182,6 +219,7 @@ class _ProductAddPageState extends State<ProductAddPage>
       setState(() {
         imageUrls.clear();
         categories.clear();
+        categoryImageUrl = null;
         isLoading = false;
       });
 
@@ -289,6 +327,7 @@ class _ProductAddPageState extends State<ProductAddPage>
                       const SizedBox(height: 20),
 
                       // 🔥 Category Section
+                      // 🔥 Category Section
                       Text(
                         "Categories",
                         style: GoogleFonts.namdhinggo(
@@ -298,18 +337,38 @@ class _ProductAddPageState extends State<ProductAddPage>
                         ),
                       ),
                       const SizedBox(height: 8),
+
+                      // Show category image + name
                       Wrap(
-                        spacing: 8,
-                        children: categories
-                            .map(
-                              (cat) => Chip(
-                                label: Text(cat),
-                                backgroundColor: ColorConst.secondary
-                                    .withOpacity(0.2),
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: categories.map((cat) {
+                          return Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.network(
+                                  cat["image"]!,
+                                  height: 60,
+                                  width: 60,
+                                  fit: BoxFit.cover,
+                                ),
                               ),
-                            )
-                            .toList(),
+                              const SizedBox(height: 6),
+                              Text(
+                                cat["name"]!,
+                                style: GoogleFonts.namdhinggo(
+                                  color: ColorConst.secondary,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          );
+                        }).toList(),
                       ),
+
                       const SizedBox(height: 12),
                       Row(
                         children: [
@@ -325,16 +384,26 @@ class _ProductAddPageState extends State<ProductAddPage>
                                   borderSide: BorderSide.none,
                                 ),
                               ),
+                              onChanged: (val) {
+                                setState(() {}); // refresh UI
+                              },
                             ),
                           ),
                           const SizedBox(width: 8),
-                          ElevatedButton(
-                            onPressed: _addCategory,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: ColorConst.secondary,
-                            ),
-                            child: const Text("Add"),
+                          IconButton(
+                            onPressed: _pickCategoryImage,
+                            icon: const Icon(Icons.image),
+                            color: ColorConst.secondary,
                           ),
+                          if (categoryController.text.isNotEmpty &&
+                              categoryImageUrl != null)
+                            ElevatedButton(
+                              onPressed: _addCategory,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: ColorConst.secondary,
+                              ),
+                              child: const Text("Add"),
+                            ),
                         ],
                       ),
 

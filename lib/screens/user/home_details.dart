@@ -18,14 +18,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   @override
   void initState() {
     super.initState();
-
     final rawImages = widget.product["imageUrls"];
     if (rawImages != null && rawImages is List) {
       images = rawImages.map((e) => e.toString()).toList();
     } else if (widget.product["imageUrl"] != null) {
       images = [widget.product["imageUrl"].toString()];
     } else {
-      images = ["https://via.placeholder.com/150"]; // fallback image
+      images = ["https://via.placeholder.com/150"];
     }
   }
 
@@ -56,7 +55,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       ),
       body: Column(
         children: [
-          // 🔥 Image Carousel
           SizedBox(
             height: 250,
             child: PageView.builder(
@@ -81,10 +79,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               },
             ),
           ),
-
           const SizedBox(height: 8),
-
-          // 🔥 Page Indicator
           if (images.length > 1)
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -102,7 +97,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 );
               }),
             ),
-
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
