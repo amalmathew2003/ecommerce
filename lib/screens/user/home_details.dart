@@ -19,14 +19,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   void initState() {
     super.initState();
 
-    // Ensure images is always a list of strings
     final rawImages = widget.product["imageUrls"];
     if (rawImages != null && rawImages is List) {
       images = rawImages.map((e) => e.toString()).toList();
     } else if (widget.product["imageUrl"] != null) {
       images = [widget.product["imageUrl"].toString()];
     } else {
-      images = [""]; // fallback empty image
+      images = ["https://via.placeholder.com/150"]; // fallback image
     }
   }
 
@@ -65,13 +64,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               itemCount: images.length,
               onPageChanged: (index) => setState(() => _currentPage = index),
               itemBuilder: (context, index) {
-                final imageUrl = images[index].isNotEmpty
-                    ? images[index]
-                    : 'https://via.placeholder.com/150';
                 return ClipRRect(
                   borderRadius: BorderRadius.circular(16),
                   child: Image.network(
-                    imageUrl,
+                    images[index],
                     width: double.infinity,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
