@@ -137,75 +137,45 @@ class _ProductAddPageState extends State<ProductAddPage>
     }
   }
 
-  Future<void> _pickCategoryImage() async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.image);
 
-    if (result != null) {
-      setState(() => isLoading = true);
-
-      String? url;
-      if (kIsWeb) {
-        url = await uploadProductImage(
-          bytes: result.files.single.bytes,
-          fileName: result.files.single.name,
-        );
-      } else if (result.files.single.path != null) {
-        url = await uploadProductImage(
-          file: File(result.files.single.path!),
-          fileName: result.files.single.name,
-        );
-      }
-
-      if (url != null) {
-        setState(() {
-          categoryImageUrl = url;
-        });
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("❌ Category image upload failed")),
-        );
-      }
-
-      setState(() => isLoading = false);
-    }
-  }
-
-  void _addCategory() {
-    final newCategory = categoryController.text.trim();
-    if (newCategory.isNotEmpty &&
-        categoryImageUrl != null &&
-        !categories.any((cat) => cat["name"] == newCategory)) {
-      setState(() {
-        categories.add({"name": newCategory, "image": categoryImageUrl!});
-        categoryController.clear();
-        categoryImageUrl = null; // reset after adding
-      });
-    }
-  }
 
   Future<void> saveProduct(String imageUrl) async {
     final String name = nameController.text.trim();
     final String price = priceController.text.trim();
     final String description = descController.text.trim();
+    final String selectedCategoryId = categoryController.text.trim();
 
     if (name.isEmpty ||
         price.isEmpty ||
         description.isEmpty ||
-        imageUrl.isEmpty) {
-      print("Please fill all fields including image");
+        imageUrl.isEmpty ||
+        selectedCategoryId.isEmpty) {
+      print("Please fill all fields including category and image");
       return;
     }
 
     setState(() => isLoading = true);
 
     try {
+      // 🔥 fetch category details from Firestore
+      final categoryDoc = await FirebaseFirestore.instance
+          .collection("categories")
+          .doc(selectedCategoryId)
+          .get();
+
+      final categoryData = categoryDoc.data();
+
       await FirebaseFirestore.instance.collection("products").add({
         "name": name,
         "price": price,
         "description": description,
         "stock": stockController.text.trim(),
         "imageUrls": imageUrls,
-        "categories": categories,
+        "category": {
+          "id": selectedCategoryId,
+          "name": categoryData?["name"],
+          "image": categoryData?["image"],
+        },
         "createdAt": FieldValue.serverTimestamp(),
       });
 
@@ -218,8 +188,6 @@ class _ProductAddPageState extends State<ProductAddPage>
 
       setState(() {
         imageUrls.clear();
-        categories.clear();
-        categoryImageUrl = null;
         isLoading = false;
       });
 
@@ -298,6 +266,113 @@ class _ProductAddPageState extends State<ProductAddPage>
                           padding: const EdgeInsets.all(16),
                           child: Column(
                             children: [
+                              //Category sclection
+                              Text(
+                                "Category",
+                                style: GoogleFonts.namdhinggo(
+                                  color: ColorConst.secondary,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+
+                              StreamBuilder<QuerySnapshot>(
+                                stream: FirebaseFirestore.instance
+                                    .collection("categories")
+                                    .orderBy("createdAt", descending: true)
+                                    .snapshots(),
+                                builder: (context, snapshot) {
+                                  if (!snapshot.hasData) {
+                                    return const CircularProgressIndicator();
+                                  }
+
+                                  final docs = snapshot.data!.docs;
+
+                                  return Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children: docs.map((doc) {
+                                      final data =
+                                          doc.data() as Map<String, dynamic>;
+                                      final isSelected =
+                                          categoryController.text == doc.id;
+
+                                      return GestureDetector(
+                                        onTap: () {
+                                          setState(() {
+                                            categoryController.text = doc
+                                                .id; // save selected category id
+                                          });
+                                        },
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 8,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: isSelected
+                                                ? ColorConst.secondary
+                                                : ColorConst.primary,
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                            border: Border.all(
+                                              color: isSelected
+                                                  ? ColorConst.secondary
+                                                  : Colors.grey.shade300,
+                                            ),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black.withValues(
+                                                  alpha: .05,
+                                                ),
+                                                blurRadius: 4,
+                                                offset: const Offset(2, 2),
+                                              ),
+                                            ],
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              if (data["image"] != null)
+                                                Container(
+                                                  width: 40,
+                                                  height: 30,
+                                                  decoration: BoxDecoration(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          6,
+                                                        ), // small rounded corners
+                                                    image: DecorationImage(
+                                                      image: NetworkImage(
+                                                        data['image'],
+                                                      ),
+                                                      fit: BoxFit.cover,
+                                                    ),
+                                                  ),
+                                                ),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                data["name"],
+                                                style: TextStyle(
+                                                  color: isSelected
+                                                      ? Colors.white
+                                                      : ColorConst.secondary,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    }).toList(),
+                                  );
+                                },
+                              ),
+
+                              const SizedBox(height: 12),
+
                               _buildTextField(
                                 nameController,
                                 "Enter Product Name",
@@ -327,88 +402,6 @@ class _ProductAddPageState extends State<ProductAddPage>
                       const SizedBox(height: 20),
 
                       // 🔥 Category Section
-                      // 🔥 Category Section
-                      Text(
-                        "Categories",
-                        style: GoogleFonts.namdhinggo(
-                          color: ColorConst.secondary,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-
-                      // Show category image + name
-                      Wrap(
-                        spacing: 12,
-                        runSpacing: 12,
-                        children: categories.map((cat) {
-                          return Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: Image.network(
-                                  cat["image"]!,
-                                  height: 60,
-                                  width: 60,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                cat["name"]!,
-                                style: GoogleFonts.namdhinggo(
-                                  color: ColorConst.secondary,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          );
-                        }).toList(),
-                      ),
-
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: categoryController,
-                              decoration: InputDecoration(
-                                hintText: "Enter new category",
-                                filled: true,
-                                fillColor: Colors.white,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide.none,
-                                ),
-                              ),
-                              onChanged: (val) {
-                                setState(() {}); // refresh UI
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          IconButton(
-                            onPressed: _pickCategoryImage,
-                            icon: const Icon(Icons.image),
-                            color: ColorConst.secondary,
-                          ),
-                          if (categoryController.text.isNotEmpty &&
-                              categoryImageUrl != null)
-                            ElevatedButton(
-                              onPressed: _addCategory,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: ColorConst.secondary,
-                              ),
-                              child: const Text("Add"),
-                            ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 20),
-
                       if (imageUrls.isNotEmpty)
                         SizedBox(
                           height: 120,
@@ -441,23 +434,50 @@ class _ProductAddPageState extends State<ProductAddPage>
                         ),
 
                       const SizedBox(height: 16),
-                      ElevatedButton.icon(
-                        onPressed: _pickAndUploadImage,
-                        icon: const Icon(Icons.upload_file),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: ColorConst.secondary,
-                          foregroundColor: ColorConst.primary,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
+                      InkWell(
+                        onTap: _pickAndUploadImage,
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 14,
+                            horizontal: 20,
+                          ),
+                          decoration: BoxDecoration(
+                            color: ColorConst.primary,
                             borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: ColorConst.secondary.withValues(alpha: .4),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.upload_file,
+                                color: Colors.white,
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                "Upload Product Image",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        label: const Text("Upload Product Image"),
                       ),
 
                       const SizedBox(height: 24),
-                      ElevatedButton(
-                        onPressed: () {
+                      GestureDetector(
+                        onTap: () {
                           if (imageUrls.isNotEmpty) {
                             saveProduct(imageUrls.first);
                           } else {
@@ -470,18 +490,30 @@ class _ProductAddPageState extends State<ProductAddPage>
                             );
                           }
                         },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: ColorConst.secondary,
-                          foregroundColor: Colors.white,
+                        child: Container(
+                          width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
+                          decoration: BoxDecoration(
+                            color: ColorConst.primary,
+                            border: Border.all(color: ColorConst.secondary),
+                            borderRadius: BorderRadius.circular(30),
+                            boxShadow: [
+                              BoxShadow(
+                                color: ColorConst.secondary.withValues(alpha: .4),
+                                blurRadius: 10,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
                           ),
-                          elevation: 6,
-                        ),
-                        child: const Text(
-                          "Save Product",
-                          style: TextStyle(fontSize: 16),
+                          alignment: Alignment.center,
+                          child: const Text(
+                            "Save Product",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
                       ),
                     ],

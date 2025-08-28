@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:social_feed_app/const/color_const.dart';
+import 'package:social_feed_app/model/client/product_list.dart'; // ProductModel
 
 class ProductDetailsScreen extends StatefulWidget {
-  final Map<String, dynamic> product;
+  final ProductModel product;
+
   const ProductDetailsScreen({super.key, required this.product});
 
   @override
@@ -18,14 +20,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   @override
   void initState() {
     super.initState();
-    final rawImages = widget.product["imageUrls"];
-    if (rawImages != null && rawImages is List) {
-      images = rawImages.map((e) => e.toString()).toList();
-    } else if (widget.product["imageUrl"] != null) {
-      images = [widget.product["imageUrl"].toString()];
-    } else {
-      images = ["https://via.placeholder.com/150"];
-    }
+    // Use product model images
+    images = widget.product.imageUrls.isNotEmpty
+        ? widget.product.imageUrls
+        : ["https://via.placeholder.com/150"];
   }
 
   @override
@@ -43,7 +41,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       appBar: AppBar(
         backgroundColor: ColorConst.primary,
         title: Text(
-          product["name"] ?? "Product Details",
+          product.name,
           style: GoogleFonts.namdhinggo(
             color: ColorConst.secondary,
             fontSize: 20,
@@ -55,6 +53,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       ),
       body: Column(
         children: [
+          // Image Carousel
           SizedBox(
             height: 250,
             child: PageView.builder(
@@ -80,6 +79,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             ),
           ),
           const SizedBox(height: 8),
+
+          // Page indicator
           if (images.length > 1)
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -97,6 +98,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 );
               }),
             ),
+
+          // Product Details
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
@@ -104,7 +107,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    product["name"] ?? "Unnamed Product",
+                    product.name,
                     style: GoogleFonts.namdhinggo(
                       color: ColorConst.secondary,
                       fontSize: 22,
@@ -116,7 +119,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        "₹${product["price"] ?? "0"}",
+                        "₹${product.price}",
                         style: GoogleFonts.namdhinggo(
                           color: ColorConst.secondary,
                           fontSize: 18,
@@ -124,7 +127,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                         ),
                       ),
                       Text(
-                        "Stock: ${product["stock"] ?? "0"}",
+                        "Stock: ${product.stock}",
                         style: GoogleFonts.namdhinggo(
                           color: ColorConst.secondary.withOpacity(0.8),
                           fontSize: 14,
@@ -143,7 +146,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    product["description"] ?? "No description available",
+                    product.description,
                     style: GoogleFonts.namdhinggo(
                       color: ColorConst.secondary.withOpacity(0.9),
                       fontSize: 14,

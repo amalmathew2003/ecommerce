@@ -8,10 +8,11 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
+import 'package:social_feed_app/screens/user/home_screen.dart';
 import 'package:social_feed_app/services/authservice.dart';
 
 import '../const/color_const.dart';
-import 'user/home_screen.dart';
+import 'user/product_screen.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
@@ -164,10 +165,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (_) => HomeScreen(
+              builder: (_) => 
+              HomeScreen(
                 profileimage: uploadedUrl!,
-                name: nameCtrl.text.trim(),
-                email: user.email.toString(),
+                username: nameCtrl.text.trim(),
+                email: user.email.toString(), 
               ),
             ),
           );

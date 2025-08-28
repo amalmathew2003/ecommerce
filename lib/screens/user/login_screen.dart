@@ -1,10 +1,10 @@
+import 'dart:math';
 import 'dart:ui';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:social_feed_app/const/color_const.dart';
 import 'package:social_feed_app/screens/admin/admin_screen.dart';
-import 'package:social_feed_app/screens/user/dashboard_screen.dart';
 import 'package:social_feed_app/screens/user/home_screen.dart';
 
 import 'package:social_feed_app/screens/profile_screen.dart';
@@ -83,9 +83,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 MaterialPageRoute(
                   builder: (_) => HomeScreen(
                     profileimage: photoUrl,
-                    name: name,
+                    username: name,
                     email: email,
                   ),
+                  // HomeScreen(
+                  //   profileimage: photoUrl,
+                  //   name: name,
+                  //   email: email,
+                  // ),
                 ),
               );
             }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:social_feed_app/screens/admin/add_categrories.dart';
+import 'package:social_feed_app/screens/admin/new_arrival_selection.dart';
 import 'package:social_feed_app/screens/admin/product_add_page.dart';
 import 'package:social_feed_app/screens/user/login_screen.dart';
 import 'package:social_feed_app/services/authservice.dart';
@@ -71,6 +73,34 @@ class _AdminScreenState extends State<AdminScreen> {
               );
             },
             child: Text("ADD product"),
+          ),
+          FloatingActionButton(
+            splashColor: Colors.amberAccent,
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (BuildContext context) {
+                    return CategoryAddPage();
+                  },
+                ),
+              );
+            },
+            child: Text("ADD catgories"),
+          ),
+          FloatingActionButton(
+            splashColor: Colors.amberAccent,
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (BuildContext context) {
+                    return AdminNewArrivalsScreen();
+                  },
+                ),
+              );
+            },
+            child: Text("ADD new arrival"),
           ),
         ],
       ),

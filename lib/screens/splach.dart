@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:social_feed_app/screens/admin/admin_screen.dart';
-import 'package:social_feed_app/screens/user/dashboard_screen.dart';
 import 'package:social_feed_app/screens/user/home_screen.dart';
 import 'package:social_feed_app/screens/user/login_screen.dart';
 
@@ -49,7 +48,7 @@ class _SplachState extends State<Splach> {
             MaterialPageRoute(
               builder: (_) => HomeScreen(
                 profileimage: user.photoURL ?? "",
-                name: user.displayName ?? "",
+                username: user.displayName ?? "",
                 email: user.email ?? "",
               ),
             ),
