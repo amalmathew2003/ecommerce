@@ -1,18 +1,15 @@
-import 'dart:convert';
-import 'dart:io' show File;
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'dart:typed_data';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart' as http;
+import 'package:social_feed_app/model/profile_model.dart';
+
 import 'package:social_feed_app/screens/user/home/home_screen.dart';
 import 'package:social_feed_app/services/authservice.dart';
-
+import 'package:social_feed_app/services/profile_servise.dart';
 import '../const/color_const.dart';
-import 'user/product_screen.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
@@ -25,6 +22,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController nameCtrl = TextEditingController();
   final Authservice authservice = Authservice();
+  final ProfileService profileService = ProfileService();
 
   Uint8List? selectedImageBytes;
   String? selectedFileName;
@@ -36,94 +34,53 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   DateTime? dob;
 
   Future<void> pickFile() async {
-    final result = await FilePicker.platform.pickFiles(
-      withData: kIsWeb,
-      type: FileType.image,
-    );
+    try {
+      final bytes = await profileService.pickFileBytes();
+      if (bytes == null) return;
 
-    if (result == null) return;
+      setState(() {
+        selectedImageBytes = bytes;
+        selectedFileName =
+            'profile_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        uploadedUrl = null;
+      });
 
-    setState(() {
-      selectedFileName = result.files.single.name;
-      if (kIsWeb) {
-        selectedImageBytes = result.files.single.bytes;
-      }
-      uploadedUrl = null;
-    });
-
-    // auto upload
-    if (selectedFileName != null) {
+      // Auto upload
       await uploadFile();
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error picking file: $e")));
     }
   }
 
   Future<void> uploadFile() async {
-    if (selectedFileName == null) return;
-
-    const accountId = "223k2MX";
-    const apiKey = "public_223k2MX9daNjdoQrytoiTGx4UzRw";
-
-    final uri = Uri.parse(
-      "https://api.bytescale.com/v2/accounts/$accountId/uploads/binary?filename=$selectedFileName",
-    );
+    if (selectedImageBytes == null || selectedFileName == null) return;
 
     setState(() => isUploading = true);
 
-    http.Response response;
-    if (kIsWeb) {
-      if (selectedImageBytes == null) return;
-      response = await http.post(
-        uri,
-        headers: {
-          "Authorization": "Bearer $apiKey",
-          "Content-Type": "application/octet-stream",
-        },
-        body: selectedImageBytes,
+    try {
+      final url = await profileService.uploadFile(
+        selectedImageBytes!,
+        selectedFileName!,
       );
-    } else {
-      final result = await FilePicker.platform.pickFiles(type: FileType.image);
-      if (result == null || result.files.single.path == null) return;
-      final file = File(result.files.single.path!);
 
-      response = await http.post(
-        uri,
-        headers: {
-          "Authorization": "Bearer $apiKey",
-          "Content-Type": "application/octet-stream",
-        },
-        body: await file.readAsBytes(),
-      );
-    }
-
-    setState(() => isUploading = false);
-
-    if (response.statusCode == 200) {
-      final jsonResp = jsonDecode(response.body);
       setState(() {
-        uploadedUrl = jsonResp["fileUrl"];
+        isUploading = false;
+        uploadedUrl = url;
       });
-    } else {
+
+      if (url == null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Upload failed")));
+      }
+    } catch (e) {
+      setState(() => isUploading = false);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Upload failed")));
+      ).showSnackBar(SnackBar(content: Text("Upload error: $e")));
     }
-  }
-
-  Future<void> saveUserProfile(String name, String photoUrl) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
-    final docRef = FirebaseFirestore.instance.collection("users").doc(user.uid);
-
-    await docRef.set({
-      "uid": user.uid,
-      "name": name,
-      "email": user.email,
-      "photoUrl": photoUrl,
-      "gender": gender,
-      "dob": dob != null ? dob!.toIso8601String() : null,
-      "createdAt": FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
   }
 
   Future<void> saveProfile() async {
@@ -152,10 +109,25 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        await user.updateDisplayName(nameCtrl.text.trim());
-        await user.updatePhotoURL(uploadedUrl);
+        // Update auth profile
+        await profileService.updateAuthProfile(
+          nameCtrl.text.trim(),
+          uploadedUrl!,
+        );
 
-        await saveUserProfile(nameCtrl.text.trim(), uploadedUrl!);
+        // Create user profile model
+        final userProfile = UserProfile(
+          uid: user.uid,
+          name: nameCtrl.text.trim(),
+          email: user.email ?? '',
+          photoUrl: uploadedUrl!,
+          gender: gender,
+          dob: dob,
+          createdAt: DateTime.now(),
+        );
+
+        // Save to Firestore
+        await profileService.saveUserProfile(userProfile);
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Profile updated successfully")),
@@ -165,11 +137,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (_) => 
-              HomeScreen(
+              builder: (_) => HomeScreen(
                 profileimage: uploadedUrl!,
                 username: nameCtrl.text.trim(),
-                email: user.email.toString(), 
+                email: user.email.toString(),
               ),
             ),
           );
@@ -292,7 +263,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
                 const SizedBox(height: 10),
 
-                // Gender Dropdown
                 // Gender Selection (Vertical Boxes)
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

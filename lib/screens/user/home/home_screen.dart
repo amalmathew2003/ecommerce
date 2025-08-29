@@ -376,8 +376,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                               ),
                                               const SizedBox(height: 6),
                                               Text(
-                                                product.description ??
-                                                    "No description",
+                                                product.description,
                                                 maxLines: 2,
                                                 overflow: TextOverflow.ellipsis,
                                                 style: TextStyle(
