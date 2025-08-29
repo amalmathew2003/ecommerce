@@ -32,9 +32,7 @@ class ProductModel {
       imageUrls: (data["imageUrls"] != null && data["imageUrls"] is List)
           ? List<String>.from(data["imageUrls"])
           : [],
-      categoryId: (data["category"] != null && data["category"]["id"] != null)
-          ? data["category"]["id"]
-          : "",
+      categoryId: data["categoryId"] ?? "", // <-- flat field
     );
   }
 }
