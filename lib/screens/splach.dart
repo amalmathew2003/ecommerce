@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:social_feed_app/screens/admin/admin_screen.dart';
-import 'package:social_feed_app/screens/user/home_screen.dart';
+import 'package:social_feed_app/screens/user/home/home_screen.dart';
 import 'package:social_feed_app/screens/user/login_screen.dart';
 
 class Splach extends StatefulWidget {

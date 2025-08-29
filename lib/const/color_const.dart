@@ -6,4 +6,6 @@ class ColorConst {
   static final primaryLight = Colors.white;
   static final primaryLight70 = Colors.white70;
 
+  static var scaffoldColor;
+
 }

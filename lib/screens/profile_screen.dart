@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
-import 'package:social_feed_app/screens/user/home_screen.dart';
+import 'package:social_feed_app/screens/user/home/home_screen.dart';
 import 'package:social_feed_app/services/authservice.dart';
 
 import '../const/color_const.dart';

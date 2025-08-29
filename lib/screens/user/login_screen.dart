@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:social_feed_app/const/color_const.dart';
 import 'package:social_feed_app/screens/admin/admin_screen.dart';
-import 'package:social_feed_app/screens/user/home_screen.dart';
+import 'package:social_feed_app/screens/user/home/home_screen.dart';
 
 import 'package:social_feed_app/screens/profile_screen.dart';
 import 'package:social_feed_app/screens/signup_screen.dart';
