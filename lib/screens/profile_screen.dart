@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io' show File;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -12,7 +11,7 @@ import 'package:social_feed_app/screens/user/home/home_screen.dart';
 import 'package:social_feed_app/services/authservice.dart';
 
 import '../const/color_const.dart';
-import 'user/product_screen.dart';
+
 
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
