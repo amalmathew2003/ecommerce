@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:social_feed_app/screens/admin/admin_screen.dart';
+import 'package:social_feed_app/screens/user/buttomnavigator/buttomnavi.dart';
 import 'package:social_feed_app/screens/user/home/home_screen.dart';
 import 'package:social_feed_app/screens/user/login_screen.dart';
 
@@ -46,7 +47,7 @@ class _SplachState extends State<Splach> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (_) => HomeScreen(
+              builder: (_) => MainFloatingNav(
                 profileimage: user.photoURL ?? "",
                 username: user.displayName ?? "",
                 email: user.email ?? "",

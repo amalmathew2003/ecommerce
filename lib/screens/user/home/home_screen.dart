@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:social_feed_app/const/color_const.dart';
 import 'package:social_feed_app/model/client/product_list.dart';
+import 'package:social_feed_app/screens/user/login_screen.dart';
 import 'package:social_feed_app/screens/user/product_details.dart';
+import 'package:social_feed_app/services/authservice.dart';
 
 class HomeScreen extends StatefulWidget {
   final String profileimage;
@@ -23,7 +25,22 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String? selectedCategoryId; // null = show all
+  final Authservice authservice = Authservice();
+  String? selectedCategoryId;
+  // null = show all
+  Future<void> userlogout() async {
+    await authservice.logOut();
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const LoginScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 500),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +75,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     IconButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        userlogout();
+                      },
                       icon: const Icon(Icons.person),
                       color: ColorConst.secondary,
                     ),
@@ -174,7 +193,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         Text(
                                           "All",
                                           style: TextStyle(
-                                            color: ColorConst.primary,
+                                            color: ColorConst.secondary,
                                             fontWeight: FontWeight.bold,
                                             fontSize: fontSize,
                                           ),
@@ -213,7 +232,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                             ]
                                           : [
                                               ColorConst.secondary,
-                                              ColorConst.primaryLight70,
+                                              ColorConst.primary.withValues(
+                                                alpha: 02,
+                                              ),
                                             ],
                                     ),
                                     borderRadius: BorderRadius.circular(20),
@@ -247,7 +268,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         style: GoogleFonts.namdhinggo(
                                           color: selectedCategoryId == id
                                               ? Colors.white
-                                              : ColorConst.primary,
+                                              : ColorConst.secondary,
                                           fontSize: fontSize,
                                           fontWeight: FontWeight.w600,
                                         ),

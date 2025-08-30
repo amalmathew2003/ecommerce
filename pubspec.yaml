@@ -42,6 +42,7 @@ dependencies:
   carousel_slider: ^5.1.1
   animate_do: ^3.3.4
   flutter_animate: ^4.5.2
+  
 
   image_picker: ^1.1.2
   google_fonts: ^6.3.0

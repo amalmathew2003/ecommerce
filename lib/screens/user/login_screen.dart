@@ -174,6 +174,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     // Password field
                     TextFormField(
+                      onFieldSubmitted: (value) {
+                        _checkLoginOrNot();
+                      },
                       controller: passwordCrl,
 
                       obscureText: true,
