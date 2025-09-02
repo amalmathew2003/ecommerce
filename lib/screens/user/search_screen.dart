@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:social_feed_app/const/color_const.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({Key? key}) : super(key: key);
@@ -14,17 +16,32 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Search"), centerTitle: true),
+      backgroundColor: ColorConst.primary,
+      appBar: AppBar(
+        title: Text(
+          "Search",
+          style: GoogleFonts.namdhinggo(color: ColorConst.secondary),
+        ),
+        centerTitle: true,
+        backgroundColor: ColorConst.primary,
+      ),
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(12.0),
             child: TextField(
               decoration: InputDecoration(
+                filled: true,
+                fillColor: ColorConst.primary,
                 hintText: "Search products or categories...",
                 prefixIcon: const Icon(Icons.search),
+
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    color: ColorConst.secondary,
+                    width: 10,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
               onChanged: (value) {
