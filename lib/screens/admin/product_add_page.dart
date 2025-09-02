@@ -156,13 +156,20 @@ class _ProductAddPageState extends State<ProductAddPage>
     setState(() => isLoading = true);
 
     try {
-      // 🔥 fetch category details from Firestore
       final categoryDoc = await FirebaseFirestore.instance
           .collection("categories")
           .doc(selectedCategoryId)
           .get();
 
       final categoryData = categoryDoc.data();
+
+      // 🔥 Generate keywords for search
+      List<String> keywords = [];
+      keywords.addAll(_generateKeywords(name));
+      keywords.addAll(_generateKeywords(description));
+      if (categoryData?["name"] != null) {
+        keywords.addAll(_generateKeywords(categoryData!["name"]));
+      }
 
       await FirebaseFirestore.instance.collection("products").add({
         "name": name,
@@ -175,10 +182,10 @@ class _ProductAddPageState extends State<ProductAddPage>
           "name": categoryData?["name"],
           "image": categoryData?["image"],
         },
+        "keywords": keywords, // ✅ save keywords for search
         "createdAt": FieldValue.serverTimestamp(),
       });
 
-      // ✅ Clear form fields after save
       nameController.clear();
       priceController.clear();
       descController.clear();
@@ -193,12 +200,20 @@ class _ProductAddPageState extends State<ProductAddPage>
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("✅ Product saved successfully")),
       );
-
-      print("✅ Product saved!");
     } catch (e) {
       setState(() => isLoading = false);
       print("❌ Error saving product: $e");
     }
+  }
+
+  /// 🔤 Utility: generate all lowercase substrings for search
+  List<String> _generateKeywords(String text) {
+    text = text.toLowerCase();
+    List<String> keywords = [];
+    for (int i = 1; i <= text.length; i++) {
+      keywords.add(text.substring(0, i));
+    }
+    return keywords;
   }
 
   @override

@@ -1,10 +1,11 @@
+import 'package:animate_do/animate_do.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:social_feed_app/const/color_const.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({Key? key}) : super(key: key);
+  const SearchScreen({super.key});
 
   @override
   _SearchScreenState createState() => _SearchScreenState();
@@ -24,33 +25,35 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
         centerTitle: true,
         backgroundColor: ColorConst.primary,
+        elevation: 0,
       ),
       body: Column(
         children: [
+          // 🔎 Modern Search Bar
           Padding(
             padding: const EdgeInsets.all(12.0),
             child: TextField(
+              style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 filled: true,
-                fillColor: ColorConst.primary,
+                fillColor: Colors.grey.shade900,
                 hintText: "Search products or categories...",
-                prefixIcon: const Icon(Icons.search),
-
+                hintStyle: const TextStyle(color: Colors.grey),
+                prefixIcon: const Icon(Icons.search, color: Colors.white70),
                 border: OutlineInputBorder(
-                  borderSide: BorderSide(
-                    color: ColorConst.secondary,
-                    width: 10,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                  borderRadius: BorderRadius.circular(16),
                 ),
               ),
               onChanged: (value) {
                 setState(() {
-                  searchQuery = value.trim();
+                  searchQuery = value.trim().toLowerCase();
                 });
               },
             ),
           ),
+
+          // 🔄 Search Results
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: (searchQuery.isEmpty)
@@ -59,49 +62,82 @@ class _SearchScreenState extends State<SearchScreen> {
                         .snapshots()
                   : FirebaseFirestore.instance
                         .collection('products')
-                        .where(
-                          'keywords',
-                          arrayContains: searchQuery.toString().toLowerCase(),
-                        )
+                        .where('keywords', arrayContains: searchQuery)
                         .snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (snapshot.data!.docs.isEmpty) {
-                  return const Center(child: Text("No products found"));
+                  return const Center(
+                    child: Text(
+                      "No products found",
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                  );
                 }
 
-                return ListView.builder(
-                  itemCount: snapshot.data!.docs.length,
-                  itemBuilder: (context, index) {
-                    var data =
-                        snapshot.data!.docs[index].data()
-                            as Map<String, dynamic>;
+                final docs = snapshot.data!.docs;
 
-                    return ListTile(
-                      leading:
-                          (data['imageUrls'] != null &&
-                              data['imageUrls'] is List &&
-                              data['imageUrls'].isNotEmpty)
-                          ? Image.network(
-                              data['imageUrls'][0],
-                              width: 50,
-                              height: 50,
-                              fit: BoxFit.cover,
-                            )
-                          : const Icon(Icons.image_not_supported, size: 50),
-                      title: Text(data['name'] ?? "No Name"),
-                      subtitle: Text(
-                        "${data['category']?['name'] ?? 'Unknown Category'} • ₹${data['price']?.toString() ?? '0'}",
+                return ListView.builder(
+                  padding: const EdgeInsets.all(12),
+                  itemCount: docs.length,
+                  itemBuilder: (context, index) {
+                    var data = docs[index].data() as Map<String, dynamic>;
+
+                    // 🎬 Staggered animations for each item
+                    return ZoomIn(
+                      duration: Duration(milliseconds: 300 + (index * 100)),
+                      child: Card(
+                        color: Colors.grey.shade900,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        child: ListTile(
+                          leading:
+                              (data['imageUrls'] != null &&
+                                  data['imageUrls'] is List &&
+                                  data['imageUrls'].isNotEmpty)
+                              ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Image.network(
+                                    data['imageUrls'][0],
+                                    width: 60,
+                                    height: 60,
+                                    fit: BoxFit.cover,
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.image_not_supported,
+                                  size: 50,
+                                  color: Colors.white70,
+                                ),
+                          title: Text(
+                            data['name'] ?? "No Name",
+                            style: TextStyle(
+                              color: ColorConst.secondary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          subtitle: Text(
+                            "${data['category']?['name'] ?? 'Unknown Category'} • ₹${data['price']?.toString() ?? '0'}",
+                            style: const TextStyle(color: Colors.white70),
+                          ),
+                          trailing: const Icon(
+                            Icons.arrow_forward_ios,
+                            color: Colors.white54,
+                            size: 18,
+                          ),
+                          onTap: () {
+                            Navigator.pushNamed(
+                              context,
+                              "/details",
+                              arguments: data,
+                            );
+                          },
+                        ),
                       ),
-                      onTap: () {
-                        Navigator.pushNamed(
-                          context,
-                          "/details",
-                          arguments: data,
-                        );
-                      },
                     );
                   },
                 );

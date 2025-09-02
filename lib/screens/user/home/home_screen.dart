@@ -1,4 +1,6 @@
 import 'package:animate_do/animate_do.dart';
+import 'package:carousel_slider/carousel_options.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -7,6 +9,7 @@ import 'package:social_feed_app/model/client/product_list.dart';
 import 'package:social_feed_app/screens/user/login_screen.dart';
 import 'package:social_feed_app/screens/user/product_details.dart';
 import 'package:social_feed_app/services/authservice.dart';
+import 'package:waterfall_flow/waterfall_flow.dart';
 
 class HomeScreen extends StatefulWidget {
   final String profileimage;
@@ -51,6 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             children: [
               SizedBox(height: 10),
+
               // ---------------- USER ROW ----------------
               Padding(
                 padding: const EdgeInsets.symmetric(
@@ -86,6 +90,128 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
 
               const SizedBox(height: 16),
+              // ---------------- NEW ARRIVALS CAROUSEL ----------------
+              StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection("products")
+                    .orderBy(
+                      "createdAt",
+                      descending: true,
+                    ) // make sure you save `createdAt` when adding product
+                    .limit(5) // only latest 5
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const SizedBox.shrink();
+                  }
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return const SizedBox.shrink(); // hide if no new arrivals
+                  }
+
+                  final newArrivals = snapshot.data!.docs;
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          child: Text(
+                            "New Arrivals",
+                            style: GoogleFonts.namdhinggo(
+                              color: ColorConst.secondary,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        CarouselSlider.builder(
+                          itemCount: newArrivals.length,
+                          itemBuilder: (context, index, realIndex) {
+                            final doc = newArrivals[index];
+                            final data = doc.data() as Map<String, dynamic>;
+                            final product = ProductModel.fromMap(doc.id, data);
+
+                            return GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        ProductDetailsScreen(product: product),
+                                  ),
+                                );
+                              },
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(20),
+                                child: Stack(
+                                  children: [
+                                    Image.network(
+                                      product.imageUrls.isNotEmpty
+                                          ? product.imageUrls.first
+                                          : "https://via.placeholder.com/400x200",
+                                      width: double.infinity,
+                                      fit: BoxFit.cover,
+                                    ),
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            Colors.black.withOpacity(0.5),
+                                            Colors.transparent,
+                                          ],
+                                          begin: Alignment.bottomCenter,
+                                          end: Alignment.topCenter,
+                                        ),
+                                      ),
+                                    ),
+                                    Positioned(
+                                      bottom: 12,
+                                      left: 12,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            product.name,
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          Text(
+                                            "\$${product.price}",
+                                            style: const TextStyle(
+                                              color: Colors.white70,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                          options: CarouselOptions(
+                            height: 200,
+                            autoPlay: true,
+                            enlargeCenterPage: true,
+                            viewportFraction: 0.85,
+                            autoPlayInterval: const Duration(seconds: 4),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
 
               // ---------------- CATEGORIES LIST ----------------
               StreamBuilder<QuerySnapshot>(
@@ -313,7 +439,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   final products = snapshot.data!.docs;
 
-                  return ListView.builder(
+                  return WaterfallFlow.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: products.length,
@@ -329,13 +455,15 @@ class _HomeScreenState extends State<HomeScreen> {
                             horizontal: 12,
                           ),
                           child: Card(
-                            color: ColorConst.secondary,
+                            color:
+                                ColorConst.secondary, // Use white for clean UI
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(20),
                             ),
-                            elevation: 4,
+                            elevation: 6,
+                            shadowColor: ColorConst.secondary.withOpacity(0.4),
                             child: InkWell(
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(20),
                               onTap: () {
                                 Navigator.push(
                                   context,
@@ -347,70 +475,108 @@ class _HomeScreenState extends State<HomeScreen> {
                               },
                               child: LayoutBuilder(
                                 builder: (context, constraints) {
-                                  // Responsive values
                                   double imageSize = constraints.maxWidth < 400
-                                      ? 80
-                                      : 120;
+                                      ? 100
+                                      : 140;
                                   double fontSize = constraints.maxWidth < 400
                                       ? 14
                                       : 18;
 
-                                  return Row(
+                                  return Column(
                                     crossAxisAlignment:
-                                        CrossAxisAlignment.center,
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      // Product Image
-                                      Padding(
-                                        padding: const EdgeInsets.all(12),
-                                        child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                          child: Image.network(
-                                            product.imageUrls.isNotEmpty
-                                                ? product.imageUrls.first
-                                                : "https://via.placeholder.com/150",
-                                            height: imageSize,
-                                            width: imageSize,
-                                            fit: BoxFit.cover,
-                                          ),
-                                        ),
-                                      ),
-                                      // Product Info
-                                      Expanded(
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            vertical: 12,
-                                            horizontal: 8,
-                                          ),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                product.name,
-                                                style: GoogleFonts.namdhinggo(
-                                                  color: ColorConst.primary,
-                                                  fontSize: fontSize,
-                                                  fontWeight: FontWeight.bold,
+                                      // 🔹 Product Image with Hero & Gradient Overlay
+                                      Stack(
+                                        children: [
+                                          ClipRRect(
+                                            borderRadius:
+                                                const BorderRadius.vertical(
+                                                  top: Radius.circular(20),
                                                 ),
+                                            child: Image.network(
+                                              product.imageUrls.isNotEmpty
+                                                  ? product.imageUrls.first
+                                                  : "https://via.placeholder.com/150",
+                                              height: imageSize + 60,
+                                              width: double.infinity,
+                                              fit: BoxFit.cover,
+                                            ),
+                                          ),
+                                          Container(
+                                            height: imageSize + 60,
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  const BorderRadius.vertical(
+                                                    top: Radius.circular(20),
+                                                  ),
+                                              gradient: LinearGradient(
+                                                colors: [
+                                                  Colors.black.withOpacity(0.6),
+                                                  Colors.transparent,
+                                                ],
+                                                begin: Alignment.bottomCenter,
+                                                end: Alignment.topCenter,
                                               ),
-                                              const SizedBox(height: 6),
-                                              Text(
-                                                product.description,
-                                                maxLines: 2,
-                                                overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          Positioned(
+                                            bottom: 8,
+                                            left: 12,
+                                            child: Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 10,
+                                                    vertical: 4,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: ColorConst.secondary,
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                              child: Text(
+                                                "\$${product.price}", // if you have price
                                                 style: TextStyle(
-                                                  color:
-                                                      ColorConst.primaryLight,
+                                                  color: ColorConst.primary,
+                                                  fontWeight: FontWeight.bold,
                                                   fontSize: fontSize - 2,
                                                 ),
                                               ),
-                                            ],
+                                            ),
                                           ),
+                                        ],
+                                      ),
+                                      // 🔹 Product Info Section
+                                      Padding(
+                                        padding: const EdgeInsets.all(12),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              product.name,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: GoogleFonts.namdhinggo(
+                                                color: ColorConst.primary,
+                                                fontSize: fontSize,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 6),
+                                            Text(
+                                              product.description,
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                color: Colors.grey.shade600,
+                                                fontSize: fontSize - 2,
+                                                height: 1.3,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                      const SizedBox(width: 12),
                                     ],
                                   );
                                 },
@@ -420,6 +586,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       );
                     },
+                    gridDelegate:
+                        SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                        ),
                   );
                 },
               ),
