@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:social_feed_app/model/profile_model.dart';
 
@@ -11,8 +12,8 @@ class ProfileService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  static const String accountId = "223k2MX";
-  static const String apiKey = "public_223k2MX9daNjdoQrytoiTGx4UzRw";
+  final String accountId = dotenv.env['BYTSCALE_ACCOUNT_ID'] ?? "";
+  final apiKey = dotenv.env['BYTSCALE_API_KEY'] ?? "";
 
   /// Pick file from device
   Future<Uint8List?> pickFileBytes() async {

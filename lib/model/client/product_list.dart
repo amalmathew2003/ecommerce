@@ -5,7 +5,7 @@ class ProductModel {
   final double price;
   final int stock;
   final List<String> imageUrls;
-  final String categoryId;
+  final CategoryModel category; // instead of just categoryId
 
   ProductModel({
     required this.id,
@@ -14,10 +14,9 @@ class ProductModel {
     required this.price,
     required this.stock,
     required this.imageUrls,
-    required this.categoryId,
+    required this.category,
   });
 
-  // Factory constructor to create ProductModel from Firestore Map
   factory ProductModel.fromMap(String id, Map<String, dynamic> data) {
     return ProductModel(
       id: id,
@@ -32,7 +31,25 @@ class ProductModel {
       imageUrls: (data["imageUrls"] != null && data["imageUrls"] is List)
           ? List<String>.from(data["imageUrls"])
           : [],
-      categoryId: data["categoryId"] ?? "", // <-- flat field
+      category: data["category"] != null
+          ? CategoryModel.fromMap(data["category"])
+          : CategoryModel(id: "", name: "Unknown", image: ""),
+    );
+  }
+}
+
+class CategoryModel {
+  final String id;
+  final String name;
+  final String image;
+
+  CategoryModel({required this.id, required this.name, required this.image});
+
+  factory CategoryModel.fromMap(Map<String, dynamic> data) {
+    return CategoryModel(
+      id: data["id"] ?? "",
+      name: data["name"] ?? "Unnamed",
+      image: data["image"] ?? "",
     );
   }
 }

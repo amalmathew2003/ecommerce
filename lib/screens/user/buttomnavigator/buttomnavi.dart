@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:social_feed_app/const/color_const.dart';
 import 'package:social_feed_app/screens/user/home/home_screen.dart';
 import 'package:social_feed_app/screens/user/login_screen.dart';
+import 'package:social_feed_app/screens/user/search_screen.dart';
 
 class MainFloatingNav extends StatefulWidget {
   final String profileimage;
@@ -34,7 +35,7 @@ class _MainFloatingNavState extends State<MainFloatingNav> {
         username: widget.username,
         email: widget.email,
       ),
-      const Placeholder(color: Colors.blue), // Search
+      const SearchScreen(), // Search
       const Placeholder(color: Colors.green), // Notifications
       const LoginScreen(), // Profile
     ];

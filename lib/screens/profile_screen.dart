@@ -1,12 +1,10 @@
 import 'dart:typed_data';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:social_feed_app/model/profile_model.dart';
-
-import 'package:social_feed_app/screens/user/home/home_screen.dart';
+import 'package:social_feed_app/screens/user/buttomnavigator/buttomnavi.dart';
 import 'package:social_feed_app/services/authservice.dart';
 import 'package:social_feed_app/services/profile_servise.dart';
 import '../const/color_const.dart';
@@ -137,7 +135,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (_) => HomeScreen(
+              builder: (_) => MainFloatingNav(
                 profileimage: uploadedUrl!,
                 username: nameCtrl.text.trim(),
                 email: user.email.toString(),

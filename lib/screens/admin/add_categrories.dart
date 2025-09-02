@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, Uint8List;
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
 class CategoryAddPage extends StatefulWidget {
@@ -23,8 +24,9 @@ class _CategoryAddPageState extends State<CategoryAddPage> {
     Uint8List? bytes,
     required String fileName,
   }) async {
-    const accountId = "223k2MX";
-    const apiKey = "public_223k2MX9daNjdoQrytoiTGx4UzRw";
+    final String accountId = dotenv.env['BYTSCALE_ACCOUNT_ID'] ?? "";
+    final apiKey = dotenv.env['BYTSCALE_API_KEY'] ?? "";
+
     final uri = Uri.parse(
       "https://api.bytescale.com/v2/accounts/$accountId/uploads/form_data",
     );
